@@ -5,6 +5,11 @@ This repository will contain the 11ty implementation and needed Infrastructure a
 This is a placeholder at the moment as the original code is getting a bit of clean up to make the code more generic.
 
 ---
+**NOTE**
+
+Do not use this repository directly, the "Use this template" button should be utilized to create your own copy of this repository.  This will allow you to make modifications to everything in this repository to suit your needs.  When there are enhancements to the source repository, you can always pull them in as needed.
+
+---
 
 ## Table of Contents
 
@@ -17,7 +22,7 @@ This is a placeholder at the moment as the original code is getting a bit of cle
 
 This repository is part of a small group of repositories that are used together in order to deploy a simple 11ty Jamstack website.  Here is the list of related repositories:
 
-1. [Jamstack Website boilerplate](https://github.com/ngamradt/boilerplate-jamstack-website) (this repository): This repository is the core repository that stitches everything together.  It houses the following components:
+1. [Jamstack Website Core](https://github.com/ngamradt/boilerplate-jamstack-website) (this repository): This repository is the core repository that stitches everything together.  It houses the following components:
     - The main AWS CodePipeline that will deploy all infrastructure and the Jamstack website itself.
     - All needed CloudFormation templates to create the required infrastructure.
     - The 11ty liquid templates for the structure of the website.
