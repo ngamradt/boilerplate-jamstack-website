@@ -1,0 +1,10 @@
+{
+  "url": "https://example.com",
+  "description": "The Name of the Blog",
+  "keywords": "blog,tag,list",
+  "author": {
+    "name": "First Last",
+    "github": "https://github.com/<username>"
+  },
+  "feedUrl": "/feed.xml"
+}
