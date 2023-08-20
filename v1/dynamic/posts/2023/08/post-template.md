@@ -2,6 +2,7 @@
 # Front Matter Block
 # UTC Time
 date: "2023-08-01T12:00:00Z"
+updated: "2023-08-02T12:00:00Z"
 author: "First Last"
 tags: [ "post" ]
 title: "Post Title"
