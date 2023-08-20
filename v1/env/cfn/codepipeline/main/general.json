@@ -1,0 +1,9 @@
+{
+  "Parameters": {
+    "ProductName": "boilerplate-jamstack-website",
+    "SecondRegion": "us-east-1",
+    "SecondRegionBucket": "main-codepipeline-bucket-codepipelinebucket-001122334455",
+    "ThirdRegion": "us-west-2",
+    "ThirdRegionBucket": "main-codepipeline-bucket-codepipelinebucket-667788990011"
+  }
+}
