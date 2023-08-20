@@ -1,0 +1,16 @@
+{
+  "Parameters": {
+    "HostedZoneName": "example.com",
+    "HostedZoneComment": "Public hosted zone for example (.com) website."
+  },
+  "StackPolicy" : {
+    "Statement" : [
+      {
+        "Effect" : "Allow",
+        "NotAction" : "Update:Delete",
+        "Principal": "*",
+        "Resource" : "*"
+      }
+    ]
+  }
+}
