@@ -1,0 +1,7 @@
+{
+  "Parameters": {
+    "PrimaryDomainName": "example.com",
+    "ParamKey": "example-com",
+    "SubjectAlternativeNamesList": "*.example.com"
+  }
+}
