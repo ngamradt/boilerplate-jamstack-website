@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    {% render 'core/analytics.liquid' %}
+    <title>{{ title }} | {{ meta.description }}</title>
+    {% render 'core/meta.liquid' %}
+    <meta name="description" content="{{ meta.description | escape }}">
+    <meta name="keywords" content="{{ meta.keywords  }}">
+    {% render 'core/link.liquid' %}
+  </head>
+  <body class="is-preload">
+
+    {% render 'core/header.liquid' %}
+
+    <!-- One -->
+    <section id="one" class="wrapper">
+      <div class="inner">
+        <header>
+          {{ content }}
+        </header>
+      </div>
+    </section>
+
+    {% render 'core/footer.liquid' %}
+
+    {% render 'core/script.liquid' %}
+
+  </body>
+</html>
