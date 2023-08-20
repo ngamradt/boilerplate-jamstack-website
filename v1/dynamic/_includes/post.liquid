@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    {% render 'core/analytics.liquid' %}
+    <title>{{ title }} | {{ meta.description }}</title>
+    {% render 'core/meta.liquid' %}
+    <meta name="description" content="{{ title | escape }}">
+    <meta name="keywords" content="{{ tags | join: "," }}">
+
+    <meta property="og:title" content="{{ title | escape }}">
+    <meta property="og:url" content="{{ meta.url }}{{ page.url }}index.html">
+
+    {% if image %}
+    <meta property="og:image" content="{{ meta.url }}{{ image }}">
+    {% endif %}
+    <meta property="og:type" content="article">
+
+    {% render 'core/link.liquid' %}
+  </head>
+  <body>
+
+    {% render 'core/header.liquid' %}
+
+    <section>
+      <div>
+          <!-- Front Matter Block Data Follows -->
+          <h1>{{ title }}</h1>
+          <div>{{ author }}</div>
+          <div>{{ date | date: '%A, %B %e, %Y' }}</div>
+          <div>
+            <!-- Loop Through Tags -->
+            {% for tag in tags %}
+              {% if tag != 'post' and tag != 'posts' %}
+                <code>{{ tag }}</code>
+              {% endif %}
+            {% endfor %}
+          </div>
+          {% if updated %}
+          <div>Updated: {{ updated | date: '%A, %B %e, %Y' }}</div>
+          {% endif %}
+
+          <div>{{ description }}</div>
+
+        <!-- Main Content Will Follow -->
+        {{ content }}
+
+      </div>
+    </section>
+
+    {% render 'core/footer.liquid' %}
+
+    {% render 'core/script.liquid' %}
+
+  </body>
+</html>
