@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <!-- Front Matter and Meta Data Follows -->
+    {% render 'core/analytics.liquid' %}
+    <title>{{ title }} | {{ meta.description }}</title>
+    {% render 'core/meta.liquid' %}
+    <meta name="description" content="{{ title | escape }}">
+    <meta name="keywords" content="{{ meta.keywords  }}">
+
+    {% render 'core/link.liquid' %}
+  </head>
+  <body>
+
+    {% render 'core/header.liquid' %}
+
+    <section>
+      <div>
+        <!-- Main Content Will Follow -->
+        {{ content }}
+
+        <!-- Loop Through All Posts -->
+        {% for post in collections.posts reversed %}
+          <a href="{{ post.url }}index.html">
+            <div>
+              <div>{{ post.date | date: '%A, %B %e, %Y' }}</div>
+              <h2>
+                {{ post.data.title }}
+              </h2>
+              <p>{{ post.data.description }}</p>
+            </div>
+          </a>
+        {% endfor %}
+
+      </div>
+    </section>
+
+    {% render 'core/footer.liquid' %}
+
+    {% render 'core/script.liquid' %}
+
+  </body>
+</html>
