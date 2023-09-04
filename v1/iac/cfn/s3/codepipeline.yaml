@@ -1,0 +1,69 @@
+AWSTemplateFormatVersion: "2010-09-09" #The Format Version is optional.
+Description: "Set up a central encrypted bucket for storing CodePipeline Zip files (to be used between steps) - (v1.0.0)"
+Parameters:
+  # General Configuration
+  SuggestedStackName:
+    Type: "String"
+    Description: "This is the suggested name for this stack.  If using the console, you can copy and paste this into the stack name field."
+    Default: "main-codepipeline-bucket"
+  BucketObjectExpirationInDays:
+    Type: "Number"
+    Description: "The default age of an object before it is automatically deleted from the bucket."
+    Default: 27
+Resources:
+  CodePipelineBucket:
+    Type: "AWS::S3::Bucket"
+    DeletionPolicy: "Delete"
+    Properties:
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+        - ServerSideEncryptionByDefault:
+            SSEAlgorithm: "AES256"
+      LifecycleConfiguration:
+        Rules:
+        # TODO: Look into having this bucket clear out completely every so often.
+        - Id: "DefaultObjectMaxAge"
+          Prefix: ""
+          Status: "Enabled"
+          AbortIncompleteMultipartUpload:
+            DaysAfterInitiation: !Ref BucketObjectExpirationInDays
+          ExpirationInDays: !Ref BucketObjectExpirationInDays
+          NoncurrentVersionExpirationInDays: !Ref BucketObjectExpirationInDays
+      PublicAccessBlockConfiguration:
+        # Block public access to buckets and objects granted through new access control lists (ACLs)
+        BlockPublicAcls: true
+        # Block public access to buckets and objects granted through any access control lists (ACLs)
+        IgnorePublicAcls: true
+        # Block public access to buckets and objects granted through new public bucket or access point policies
+        BlockPublicPolicy: true
+        # Block public and cross-account access to buckets and objects through any public bucket or access point policies
+        RestrictPublicBuckets: true
+      VersioningConfiguration:
+        Status: "Suspended"
+      Tags:
+      - Key: "StackName"
+        Value: !Ref "AWS::StackName"
+Outputs:
+  CodePipelineBucketName:
+    Description: "The bucket name."
+    Value: !Ref CodePipelineBucket
+    Export:
+      Name: !Sub "${AWS::StackName}-CodePipelineBucketName"
+  CodePipelineBucketArn:
+    Description: "The bucket ARN."
+    Value: !GetAtt CodePipelineBucket.Arn
+    Export:
+      Name: !Sub "${AWS::StackName}-CodePipelineBucketArn"
+Metadata:
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+    - Label:
+        default: "General Configuration"
+      Parameters:
+      - SuggestedStackName
+      - BucketObjectExpirationInDays
+    ParameterLabels:
+      SuggestedStackName:
+        default: "Suggested Stack Name:"
+      BucketObjectExpirationInDays:
+        default: "Default Object Expiration (In Days):"
