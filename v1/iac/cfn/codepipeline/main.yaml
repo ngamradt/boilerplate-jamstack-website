@@ -1,0 +1,1066 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "Create a CodePipeline for building infrastructure and deploying static website. - (v1.0.0)"
+
+Parameters:
+  # General Configuration
+  SuggestedStackName:
+    Type: "String"
+    Description: "This is the suggested name for this stack.  If using the console, you can copy and paste this into the stack name field."
+    Default: "main-jamstack-website"
+  ProductName:
+    Type: "String"
+    Description: "What is the product name?"
+    Default: "jamstack-website"
+  InfrastructureName:
+    Type: "String"
+    Description: "A name used to differentiate this infrastructure from other existing infrastructure."
+    Default: "main"
+  # CodePipeline Flags
+  EnableCodePipelineStage:
+    Type: "String"
+    Description: "Enabled the CodePipeline update stage?"
+    AllowedValues:
+    - "Yes"
+    - "No"
+    Default: "Yes"
+  EnableInfrastructureStage:
+    Type: "String"
+    Description: "Enabled the infrastructure stage?"
+    AllowedValues:
+    - "Yes"
+    - "No"
+    Default: "Yes"
+  EnableLambdaStage:
+    Type: "String"
+    Description: "Enabled the Lambda stage?"
+    AllowedValues:
+    - "Yes"
+    - "No"
+    Default: "No"
+  EnableBuildStage:
+    Type: "String"
+    Description: "Enabled the build stage?"
+    AllowedValues:
+    - "Yes"
+    - "No"
+    Default: "No"
+  EnableDeployStage:
+    Type: "String"
+    Description: "Enabled the deployment stage?"
+    AllowedValues:
+    - "Yes"
+    - "No"
+    Default: "No"
+  EnableStaticStage:
+    Type: "String"
+    Description: "Enabled the large static file stage?"
+    AllowedValues:
+    - "Yes"
+    - "No"
+    Default: "No"
+  # CodePipeline Configuration
+  BucketObjectExpirationInDays:
+    Type: "Number"
+    Description: "The default age of an object before it is automatically deleted from the bucket."
+    Default: 27
+  CloudFormationCapabilities:
+    Type: "String"
+    Description: "A list of the capabilities that CloudFormation should have when executing stacks via CodePipeline."
+    Default: "CAPABILITY_NAMED_IAM,CAPABILITY_AUTO_EXPAND"
+  AppBaseFolder:
+    Type: "String"
+    Description: "The base repository folder for the application."
+    Default: "v1"
+  ActionMode:
+    Type: "String"
+    Description: "The CodePipeline CloudFormation stack action mode."
+    AllowedValues:
+    - "CHANGE_SET_EXECUTE"
+    - "CHANGE_SET_REPLACE"
+    - "CREATE_UPDATE"
+    - "DELETE_ONLY"
+    - "REPLACE_ON_FAILURE"
+    Default: "REPLACE_ON_FAILURE"
+  ProdSuffix:
+    Type: "String"
+    Description: "What suffix should be added to the production version of the function?"
+    Default: "prod"
+  SecondRegion:
+    Type: "String"
+    Description: "You can deploy to two additional regions, if you would like.  What is the second region that you would like this function deployed to?"
+    AllowedValues:
+    - "NONE"
+    - "us-east-1"
+    - "us-east-2"
+    - "us-west-1"
+    - "us-west-2"
+    - "af-south-1"
+    - "ap-east-1"
+    - "ap-south-1"
+    - "ap-northeast-2"
+    - "ap-southeast-1"
+    - "ap-southeast-2"
+    - "ap-northeast-1"
+    - "ca-central-1"
+    - "eu-central-1"
+    - "eu-west-1"
+    - "eu-west-2"
+    - "eu-south-1"
+    - "eu-west-3"
+    - "eu-north-1"
+    - "me-south-1"
+    - "sa-east-1"
+    Default: "NONE"
+  SecondRegionBucket:
+    Type: "String"
+    Description: "What is the name of the CodePipeline bucket that was set up in the second region (using the \"s3/codepipeline.yaml\" template)?"
+    Default: ""
+  ThirdRegion:
+    Type: "String"
+    Description: "You can deploy to two additional regions, if you would like.  What is the third region that you would like this function deployed to?"
+    AllowedValues:
+    - "NONE"
+    - "us-east-1"
+    - "us-east-2"
+    - "us-west-1"
+    - "us-west-2"
+    - "af-south-1"
+    - "ap-east-1"
+    - "ap-south-1"
+    - "ap-northeast-2"
+    - "ap-southeast-1"
+    - "ap-southeast-2"
+    - "ap-northeast-1"
+    - "ca-central-1"
+    - "eu-central-1"
+    - "eu-west-1"
+    - "eu-west-2"
+    - "eu-south-1"
+    - "eu-west-3"
+    - "eu-north-1"
+    - "me-south-1"
+    - "sa-east-1"
+    Default: "NONE"
+  ThirdRegionBucket:
+    Type: "String"
+    Description: "What is the name of the CodePipeline bucket that was set up in the third region (using the \"s3/codepipeline.yaml\" template)?"
+    Default: ""
+  # Source Configuration
+  WebsiteSourceRepository:
+    Type: "String"
+    Description: "What is the name of the website GitHub repository (should be the repository this file is in)?"
+    Default: "jamstack-website"
+  WebsiteSourceBranch:
+    Type: "String"
+    Description: "What is the branch name of the website GitHub repository?"
+    Default: "main"
+  StaticSourceRepository:
+    Type: "String"
+    Description: "What is the name of the website static resources GitHub repository (should be the repository this file is in)?"
+    Default: "jamstack-website-static"
+  StaticSourceBranch:
+    Type: "String"
+    Description: "What is the branch name of the website static resources GitHub repository?"
+    Default: "main"
+  BuildSourceRepository:
+    Type: "String"
+    Description: "What is the name of the build GitHub repository (should be the repository this file is in)?"
+    Default: "jamstack-website-build"
+  BuildSourceBranch:
+    Type: "String"
+    Description: "What is the branch name of the build GitHub repository?"
+    Default: "main"
+  OutputArtifactFormat:
+    Type: "String"
+    Description: "Should the files from the content ZIP be extracted to S3?"
+    AllowedValues:
+    - "CODEBUILD_CLONE_REF"
+    - "CODE_ZIP"
+    Default: "CODE_ZIP"
+  # Deployment Configuration
+  BuildFileCacheControl:
+    Type: "String"
+    Description: "The Cache-Control header value applied to files coming from the build process."
+    Default: "max-age=120, public"
+  StaticFileCacheControl:
+    Type: "String"
+    Description: "The Cache-Control header value applied to files coming from the static repository."
+    Default: "max-age=900, public"
+  StaticContentBasePath:
+    Type: "String"
+    Description: "The static content base path that should be added for the extracted files."
+    Default: ""
+  DynamicContentBasePath:
+    Type: "String"
+    Description: "The dynamic content base path that should be added for the extracted files."
+    Default: ""
+  ExtractFiles:
+    Type: "String"
+    Description: "Should the files from the content ZIP be extracted to S3?"
+    AllowedValues:
+    - "Yes"
+    - "No"
+    Default: "Yes"
+  # CloudFront Distribution Configuration
+  PrimaryDnsEntryName:
+    Type: "String"
+    Description: "The primay DNS entry for the CloudFront Distribution."
+    Default: "example.com"
+  SecondaryDnsEntryName:
+    Type: "String"
+    Description: "The secondary DNS entry for the CloudFront Distribution."
+    Default: "www.example.com"
+  # Lambda Function Environment Variables
+  DynamicDirectory:
+    Type: "String"
+    Description: "What is the directory that holds the content for 11ty to process?"
+    Default: "/v1/dynamic"
+  StaticDirectory:
+    Type: "String"
+    Description: "What is the directory that holds the content for 11ty to process?"
+    Default: "/v1/content"
+
+Conditions:
+  AppBaseFolder: !Not [ !Equals [ !Ref AppBaseFolder, "" ] ]
+  BuildFileCacheControl: !Not [ !Equals [ !Ref BuildFileCacheControl, "" ] ]
+  DynamicContentBasePath: !Not [ !Equals [ !Ref DynamicContentBasePath, "" ] ]
+  StaticContentBasePath: !Not [ !Equals [ !Ref StaticContentBasePath, "" ] ]
+  EnableCodePipelineStage: !Equals [ !Ref EnableCodePipelineStage, "Yes" ]
+  EnableBuildStage: !Equals [ !Ref EnableBuildStage, "Yes" ]
+  EnableDeployStage: !Equals [ !Ref EnableDeployStage, "Yes" ]
+  EnableLambdaStage: !Equals [ !Ref EnableLambdaStage, "Yes" ]
+  EnableStaticStage: !Equals [ !Ref EnableStaticStage, "Yes" ]
+  EnableInfrastructureStage: !Equals [ !Ref EnableInfrastructureStage, "Yes" ]
+  ExtractFiles: !Equals [ !Ref ExtractFiles, "Yes" ]
+  SecondRegion: !Not [ !Equals [ !Ref SecondRegion, "NONE" ] ]
+  StaticFileCacheControl: !Not [ !Equals [ !Ref StaticFileCacheControl, "" ] ]
+  ThirdRegion: !Not [ !Equals [ !Ref ThirdRegion, "NONE" ] ]
+
+Resources:
+  # Create a parameter that other CloudFormation templates can leverage.
+  ParamProductName:
+    Type: "AWS::SSM::Parameter"
+    Properties:
+      DataType: "text"
+      Description: "The product name."
+      Name: !Sub "/account/${InfrastructureName}/product/name"
+      Tier: "Standard"
+      Type: "String"
+      Value: !Ref ProductName
+      Tags:
+        StackName: !Ref "AWS::StackName"
+
+  # Create a simple S3 bucket that the CodePipeline will use for storing artifacts between stages.
+  CodePipelineBucket:
+    Type: "AWS::S3::Bucket"
+    DeletionPolicy: "Delete"
+    Properties:
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+        - ServerSideEncryptionByDefault:
+            SSEAlgorithm: "AES256"
+      LifecycleConfiguration:
+        Rules:
+        # TODO: Look into having this bucket clear out completely every so often.
+        - Id: "DefaultObjectMaxAge"
+          Prefix: ""
+          Status: "Enabled"
+          AbortIncompleteMultipartUpload:
+            DaysAfterInitiation: !Ref BucketObjectExpirationInDays
+          ExpirationInDays: !Ref BucketObjectExpirationInDays
+          NoncurrentVersionExpirationInDays: !Ref BucketObjectExpirationInDays
+      PublicAccessBlockConfiguration:
+        # Block public access to buckets and objects granted through new access control lists (ACLs)
+        BlockPublicAcls: true
+        # Block public access to buckets and objects granted through any access control lists (ACLs)
+        IgnorePublicAcls: true
+        # Block public access to buckets and objects granted through new public bucket or access point policies
+        BlockPublicPolicy: true
+        # Block public and cross-account access to buckets and objects through any public bucket or access point policies
+        RestrictPublicBuckets: true
+      VersioningConfiguration:
+        Status: "Suspended"
+      Tags:
+      - Key: "StackName"
+        Value: !Ref "AWS::StackName"
+
+  # Create a role that the CodePipeline can use for deploying resources.
+  CodePipelineRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      Path: "/"
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+        - Effect: "Allow"
+          Principal:
+            Service:
+            - "cloudformation.amazonaws.com"
+            - "codepipeline.amazonaws.com"
+          Action:
+          - "sts:AssumeRole"
+      Policies:
+      - PolicyName: "SetupServiceRole"
+        PolicyDocument:
+          Version: "2012-10-17"
+          Statement:
+          - Effect: "Allow"
+            Action:
+            - "acm:*"
+            Resource: "*"
+          - Effect: "Allow"
+            Action:
+            - "events:*"
+            Resource: "*"
+          # These IAM actions are needed for CodePipeline to successfully pass IAM roles to stage actions, etc.
+          - Effect: "Allow"
+            Action:
+            - "iam:AttachRolePolicy"
+            - "iam:CreateRole"
+            - "iam:CreateServiceLinkedRole"
+            - "iam:DeleteRole"
+            - "iam:DeleteRolePermissionsBoundary"
+            - "iam:DeleteRolePolicy"
+            - "iam:DeleteServiceLinkedRole"
+            - "iam:DetachRolePolicy"
+            - "iam:GetRole"
+            - "iam:GetRolePolicy"
+            - "iam:GetServiceLinkedRoleDeletionStatus"
+            - "iam:ListAttachedRolePolicies"
+            - "iam:ListInstanceProfilesForRole"
+            - "iam:ListRolePolicies"
+            - "iam:ListRoleTags"
+            - "iam:PassRole"
+            - "iam:PutRolePermissionsBoundary"
+            - "iam:PutRolePolicy"
+            - "iam:TagRole"
+            - "iam:UntagRole"
+            - "iam:UpdateAssumeRolePolicy"
+            - "iam:UpdateRole"
+            - "iam:UpdateRoleDescription"
+            Resource: "*"
+          - Effect: "Allow"
+            Action:
+            - "ssm:AddTagsToResource"
+            - "ssm:DeleteParameter"
+            - "ssm:DeleteParameters"
+            - "ssm:DescribeDocumentParameters"
+            - "ssm:DescribeParameters"
+            - "ssm:GetParameter"
+            - "ssm:GetParameterHistory"
+            - "ssm:GetParameters"
+            - "ssm:GetParametersByPath"
+            - "ssm:LabelParameterVersion"
+            - "ssm:ListTagsForResource"
+            - "ssm:PutParameter"
+            - "ssm:RemoveTagsFromResource"
+            Resource: "*"
+      ManagedPolicyArns:
+      - "arn:aws:iam::aws:policy/AmazonRoute53FullAccess"
+      - "arn:aws:iam::aws:policy/AmazonS3FullAccess"
+      - "arn:aws:iam::aws:policy/AWSCloudFormationFullAccess"
+      - "arn:aws:iam::aws:policy/AWSCodeCommitFullAccess"
+      - "arn:aws:iam::aws:policy/AWSCodePipeline_FullAccess"
+      - "arn:aws:iam::aws:policy/AWSLambda_FullAccess"
+      - "arn:aws:iam::aws:policy/CloudFrontFullAccess"
+      Tags:
+      - Key: "StackName"
+        Value: !Ref "AWS::StackName"
+
+  # The "polymorphic" CodePipeline used to update the CodePipeline itself, create the base infrastructure, deploy the build Lambda, and build and deploy content.
+  # This CodePipeline changes its function based on parameters in this template.
+  CodePipeline:
+    Type: "AWS::CodePipeline::Pipeline"
+    Properties:
+      RoleArn: !GetAtt CodePipelineRole.Arn
+      Name: !Ref SuggestedStackName
+      RestartExecutionOnUpdate: true
+      ArtifactStores:
+      - Region: !Ref "AWS::Region"
+        ArtifactStore:
+          Type: "S3"
+          Location: !Ref CodePipelineBucket
+      - !If
+        - SecondRegion
+        - Region: !Ref SecondRegion
+          ArtifactStore:
+            Type: "S3"
+            Location: !Ref SecondRegionBucket
+        - !Ref "AWS::NoValue"
+      - !If
+        - ThirdRegion
+        - Region: !Ref ThirdRegion
+          ArtifactStore:
+            Type: "S3"
+            Location: !Ref ThirdRegionBucket
+        - !Ref "AWS::NoValue"
+      Stages:
+
+      # Set the source stage
+
+      # Source Variables:
+
+      # Source.AuthorDate
+      # Source.BranchName
+      # Source.CommitId
+      # Source.CommitMessage
+      # Source.CommitterDate
+      # Source.RepositoryName
+
+      - Name: "Source"
+        Actions:
+        - Name: "Jamstack_Website_Source"
+          Namespace: "JamstackWebsite"
+          ActionTypeId:
+            Category: "Source"
+            Owner: "AWS"
+            Provider: "CodeCommit"
+            Version: "1"
+          Configuration:
+            RepositoryName: !Ref WebsiteSourceRepository
+            BranchName: !Ref WebsiteSourceBranch
+            PollForSourceChanges: false
+            OutputArtifactFormat: !Ref OutputArtifactFormat
+          OutputArtifacts:
+          - Name: "WEBSITE_SOURCE_FILES"
+          RunOrder: 1
+        - !If
+          - EnableStaticStage
+          - Name: "Jamstack_Website_Static_Source"
+            Namespace: "JamstackWebsiteStatic"
+            ActionTypeId:
+              Category: "Source"
+              Owner: "AWS"
+              Provider: "CodeCommit"
+              Version: "1"
+            Configuration:
+              RepositoryName: !Ref StaticSourceRepository
+              BranchName: !Ref StaticSourceBranch
+              PollForSourceChanges: false
+              OutputArtifactFormat: !Ref OutputArtifactFormat
+            OutputArtifacts:
+            - Name: "STATIC_SOURCE_FILES"
+            RunOrder: 1
+          - !Ref "AWS::NoValue"
+        - !If
+          - EnableLambdaStage
+          - Name: "Build_Source"
+            Namespace: "Build"
+            ActionTypeId:
+              Category: "Source"
+              Owner: "AWS"
+              Provider: "CodeCommit"
+              Version: "1"
+            Configuration:
+              RepositoryName: !Ref BuildSourceRepository
+              BranchName: !Ref BuildSourceBranch
+              PollForSourceChanges: false
+              OutputArtifactFormat: !Ref OutputArtifactFormat
+            OutputArtifacts:
+            - Name: "BUILD_SOURCE_FILES"
+            RunOrder: 1
+          - !Ref "AWS::NoValue"
+
+      # Enable automated updates to this CodePipeline (a bit meta)
+      - !If
+        - EnableCodePipelineStage
+
+        - Name: "CodePipeline"
+          Actions:
+          - Name: "Update_CodePipeline"
+            ActionTypeId:
+              Category: "Deploy"
+              Owner: "AWS"
+              Provider: "CloudFormation"
+              Version: "1"
+            Configuration:
+              ActionMode: !Ref ActionMode
+              StackName: !Ref SuggestedStackName
+              Capabilities: !Ref CloudFormationCapabilities
+              TemplatePath:
+                Fn::Sub:
+                - "WEBSITE_SOURCE_FILES::${Folder}iac/cfn/codepipeline/main.yaml"
+                - Folder: !If [ AppBaseFolder, !Sub "${AppBaseFolder}/", "" ]
+              TemplateConfiguration:
+                Fn::Sub:
+                - "WEBSITE_SOURCE_FILES::${Folder}env/cfn/codepipeline/main/general.json"
+                - Folder: !If [ AppBaseFolder, !Sub "${AppBaseFolder}/", "" ]
+              RoleArn: !GetAtt CodePipelineRole.Arn
+              OutputFileName: "out.json"
+              ParameterOverrides: !Sub |
+                {
+                  "InfrastructureName": "${InfrastructureName}"
+                }
+            InputArtifacts:
+            - Name: "WEBSITE_SOURCE_FILES"
+            OutputArtifacts:
+            - Name: "UPDATE_CODEPIPELINE_OUTPUT"
+            RunOrder: 1
+            Region: !Ref "AWS::Region"
+
+        - !Ref "AWS::NoValue" # The end of the CodePipeline update conditional
+
+      # Enable the creation of a lot of base infrastructure for this project
+      # NOTE: Allows us to use the same CodePipeline for infrastructure and deployments (conditionally)
+      - !If
+        - EnableInfrastructureStage
+
+        - Name: "Infrastructure"
+          Actions:
+          - Name: "Origin_Access_Identity"
+            ActionTypeId:
+              Category: "Deploy"
+              Owner: "AWS"
+              Provider: "CloudFormation"
+              Version: "1"
+            Configuration:
+              ActionMode: !Ref ActionMode
+              StackName: !Sub "${InfrastructureName}-cloudfront-origin-access-identity-${ProductName}"
+              Capabilities: !Ref CloudFormationCapabilities
+              TemplatePath:
+                Fn::Sub:
+                - "WEBSITE_SOURCE_FILES::${Folder}iac/cfn/cloudfront/origin-access-identity.yaml"
+                - Folder: !If [ AppBaseFolder, !Sub "${AppBaseFolder}/", "" ]
+              RoleArn: !GetAtt CodePipelineRole.Arn
+              OutputFileName: "out.json"
+            InputArtifacts:
+            - Name: "WEBSITE_SOURCE_FILES"
+            OutputArtifacts:
+            - Name: "CLOUDFRONT_OAI_OUTPUT"
+            RunOrder: 1
+            Region: !Ref "AWS::Region"
+          - Name: "Artifact_Bucket"
+            ActionTypeId:
+              Category: "Deploy"
+              Owner: "AWS"
+              Provider: "CloudFormation"
+              Version: "1"
+            Configuration:
+              ActionMode: !Ref ActionMode
+              StackName: !Sub "${InfrastructureName}-artifact-bucket-${ProductName}"
+              Capabilities: !Ref CloudFormationCapabilities
+              TemplatePath:
+                Fn::Sub:
+                - "WEBSITE_SOURCE_FILES::${Folder}iac/cfn/s3/artifact.yaml"
+                - Folder: !If [ AppBaseFolder, !Sub "${AppBaseFolder}/", "" ]
+              TemplateConfiguration:
+                Fn::Sub:
+                - "WEBSITE_SOURCE_FILES::${Folder}env/cfn/s3/artifact.json"
+                - Folder: !If [ AppBaseFolder, !Sub "${AppBaseFolder}/", "" ]
+              RoleArn: !GetAtt CodePipelineRole.Arn
+              OutputFileName: "out.json"
+              ParameterOverrides: !Sub |
+                {
+                  "InfrastructureName": "${InfrastructureName}"
+                }
+            InputArtifacts:
+            - Name: "WEBSITE_SOURCE_FILES"
+            OutputArtifacts:
+            - Name: "ARTIFACT_BUCKET_OUTPUT"
+            RunOrder: 2
+            Region: !Ref "AWS::Region"
+          - Name: "Site_Bucket"
+            ActionTypeId:
+              Category: "Deploy"
+              Owner: "AWS"
+              Provider: "CloudFormation"
+              Version: "1"
+            Configuration:
+              ActionMode: !Ref ActionMode
+              StackName: !Sub "${InfrastructureName}-site-bucket-${ProductName}"
+              Capabilities: !Ref CloudFormationCapabilities
+              TemplatePath:
+                Fn::Sub:
+                - "WEBSITE_SOURCE_FILES::${Folder}iac/cfn/s3/site.yaml"
+                - Folder: !If [ AppBaseFolder, !Sub "${AppBaseFolder}/", "" ]
+              TemplateConfiguration:
+                Fn::Sub:
+                - "WEBSITE_SOURCE_FILES::${Folder}env/cfn/s3/site.json"
+                - Folder: !If [ AppBaseFolder, !Sub "${AppBaseFolder}/", "" ]
+              RoleArn: !GetAtt CodePipelineRole.Arn
+              OutputFileName: "out.json"
+              ParameterOverrides: !Sub |
+                {
+                  "InfrastructureName": "${InfrastructureName}",
+                  "BucketBaseName": "site",
+                  "S3CanonicalUserId": { "Fn::GetParam" : [ "CLOUDFRONT_OAI_OUTPUT", "out.json", "S3CanonicalUserId" ] }
+                }
+            InputArtifacts:
+            - Name: "WEBSITE_SOURCE_FILES"
+            - Name: "CLOUDFRONT_OAI_OUTPUT"
+            OutputArtifacts:
+            - Name: "SITE_BUCKET_OUTPUT"
+            RunOrder: 2
+            Region: !Ref "AWS::Region"
+          - Name: "Hosted_Zone_Jamstack"
+            ActionTypeId:
+              Category: "Deploy"
+              Owner: "AWS"
+              Provider: "CloudFormation"
+              Version: "1"
+            Configuration:
+              ActionMode: !Ref ActionMode
+              StackName: !Sub "${InfrastructureName}-route53-hosted-zone-jamstack"
+              Capabilities: !Ref CloudFormationCapabilities
+              TemplatePath:
+                Fn::Sub:
+                - "WEBSITE_SOURCE_FILES::${Folder}iac/cfn/route53/hosted-zone/public.yaml"
+                - Folder: !If [ AppBaseFolder, !Sub "${AppBaseFolder}/", "" ]
+              TemplateConfiguration:
+                Fn::Sub:
+                - "WEBSITE_SOURCE_FILES::${Folder}env/cfn/route53/hosted-zone/public/example.com.json"
+                - Folder: !If [ AppBaseFolder, !Sub "${AppBaseFolder}/", "" ]
+              RoleArn: !GetAtt CodePipelineRole.Arn
+              OutputFileName: "out.json"
+              ParameterOverrides: !Sub |
+                {
+                  "InfrastructureName": "${InfrastructureName}"
+                }
+            InputArtifacts:
+            - Name: "WEBSITE_SOURCE_FILES"
+            OutputArtifacts:
+            - Name: "ROUTE53_HOSTED_ZONE_JAMSTACK_OUTPUT"
+            RunOrder: 3
+            Region: !Ref "AWS::Region"
+          - Name: "Secure_Certificate_Jamstack"
+            ActionTypeId:
+              Category: "Deploy"
+              Owner: "AWS"
+              Provider: "CloudFormation"
+              Version: "1"
+            Configuration:
+              ActionMode: !Ref ActionMode
+              StackName: !Sub "${InfrastructureName}-secure-certificate-jamstack"
+              Capabilities: !Ref CloudFormationCapabilities
+              TemplatePath:
+                Fn::Sub:
+                - "WEBSITE_SOURCE_FILES::${Folder}iac/cfn/acm/certificate.yaml"
+                - Folder: !If [ AppBaseFolder, !Sub "${AppBaseFolder}/", "" ]
+              TemplateConfiguration:
+                Fn::Sub:
+                - "WEBSITE_SOURCE_FILES::${Folder}env/cfn/acm/certificate/example.com.json"
+                - Folder: !If [ AppBaseFolder, !Sub "${AppBaseFolder}/", "" ]
+              RoleArn: !GetAtt CodePipelineRole.Arn
+              OutputFileName: "out.json"
+              ParameterOverrides: !Sub
+              - |
+                {
+                  "InfrastructureName": "${InfrastructureName}",
+                  "HostedZoneId": "${HostedZoneId}"
+                }
+              - HostedZoneId: !Sub "{{resolve:ssm:/route53/${InfrastructureName}/hosted-zone/id}}"
+            InputArtifacts:
+            - Name: "WEBSITE_SOURCE_FILES"
+            OutputArtifacts:
+            - Name: "SECURE_CERTIFICATE_OUTPUT"
+            RunOrder: 4
+            Region: "us-east-1"
+
+          # Create the CloudFront Distribution
+          - Name: "CloudFront_Distribution"
+            ActionTypeId:
+              Category: "Deploy"
+              Owner: "AWS"
+              Provider: "CloudFormation"
+              Version: "1"
+            Configuration:
+              ActionMode: !Ref ActionMode
+              StackName: !Sub "${InfrastructureName}-cloudfront-distribution-${ProductName}"
+              Capabilities: !Ref CloudFormationCapabilities
+              TemplatePath:
+                Fn::Sub:
+                - "WEBSITE_SOURCE_FILES::${Folder}iac/cfn/cloudfront/distribution.yaml"
+                - Folder: !If [ AppBaseFolder, !Sub "${AppBaseFolder}/", "" ]
+              TemplateConfiguration:
+                Fn::Sub:
+                - "WEBSITE_SOURCE_FILES::${Folder}env/cfn/cloudfront/distribution.json"
+                - Folder: !If [ AppBaseFolder, !Sub "${AppBaseFolder}/", "" ]
+              RoleArn: !GetAtt CodePipelineRole.Arn
+              OutputFileName: "out.json"
+              ParameterOverrides: !Sub |
+                {
+                  "InfrastructureName": "${InfrastructureName}",
+                  "AcmCertificateArn": { "Fn::GetParam" : [ "SECURE_CERTIFICATE_OUTPUT", "out.json", "CertificateArn" ] },
+                  "PrimaryDnsEntryName": "${PrimaryDnsEntryName}",
+                  "SecondaryDnsEntryName": "${SecondaryDnsEntryName}",
+                  "DefaultOriginDomain": { "Fn::GetParam" : [ "SITE_BUCKET_OUTPUT", "out.json", "BucketRegionalDomainName" ] },
+                  "DistributionComment": "Static site for the \"${ProductName}\" project.",
+                  "OriginAccessIdentity": { "Fn::GetParam" : [ "CLOUDFRONT_OAI_OUTPUT", "out.json", "OriginAccessIdentity" ] }
+                }
+            InputArtifacts:
+            - Name: "WEBSITE_SOURCE_FILES"
+            - Name: "SECURE_CERTIFICATE_OUTPUT"
+            - Name: "CLOUDFRONT_OAI_OUTPUT"
+            - Name: "SITE_BUCKET_OUTPUT"
+            OutputArtifacts:
+            - Name: "CLOUDFRONT_DISTRIBUTION_OUTPUT"
+            RunOrder: 5
+            Region: !Ref "AWS::Region"
+
+        - !Ref "AWS::NoValue" # The end of the base infrastructure conditional
+
+      # Enable the stage for deploying the Lambda function.
+      - !If
+        - EnableLambdaStage
+
+        - Name: "Lambda_Deployment"
+          Actions:
+          - Name: "Prepare_Lambda_Source"
+            ActionTypeId:
+              Category: "Deploy"
+              Owner: "AWS"
+              Provider: "S3"
+              Version: "1"
+            Configuration:
+              BucketName: !Sub "{{resolve:ssm:/s3/${InfrastructureName}/bucket/artifact/name}}"
+              Extract: false
+              ObjectKey: !Sub "${ProductName}/lambda-#{codepipeline.PipelineExecutionId}.zip"
+            InputArtifacts:
+            - Name: "BUILD_SOURCE_FILES"
+            RunOrder: 1
+            Region: !Ref "AWS::Region"
+          - Name: "Lambda_Function"
+            Namespace: "PrimaryLambdaFunction"
+            ActionTypeId:
+              Category: "Deploy"
+              Owner: "AWS"
+              Provider: "CloudFormation"
+              Version: "1"
+            Configuration:
+              ActionMode: !Ref ActionMode
+              StackName: !Sub "${InfrastructureName}-function-${ProductName}"
+              Capabilities: !Ref CloudFormationCapabilities
+              TemplatePath:
+                Fn::Sub:
+                - "BUILD_SOURCE_FILES::${Folder}iac/cfn/lambda/function.yaml"
+                - Folder: !If [ AppBaseFolder, !Sub "${AppBaseFolder}/", "" ]
+              TemplateConfiguration:
+                Fn::Sub:
+                - "BUILD_SOURCE_FILES::${Folder}env/cfn/lambda/11ty-build.json"
+                - Folder: !If [ AppBaseFolder, !Sub "${AppBaseFolder}/", "" ]
+              RoleArn: !GetAtt CodePipelineRole.Arn
+              OutputFileName: "out.json"
+              ParameterOverrides: !Sub
+              - |
+                {
+                  "InfrastructureName": "${InfrastructureName}",
+                  "AppBaseFolder": "${AppBaseFolder}",
+                  "GitCommit": "#{JamstackWebsite.CommitId}",
+                  "Name": "${ProductName}",
+                  "S3Bucket": "${Bucket}",
+                  "S3Key": "${ProductName}/lambda-#{codepipeline.PipelineExecutionId}.zip",
+                  "TagEnvironment": "${ProdSuffix}"
+                }
+              - Bucket: !Sub "{{resolve:ssm:/s3/${InfrastructureName}/bucket/artifact/name}}"
+            InputArtifacts:
+            - Name: "BUILD_SOURCE_FILES"
+            OutputArtifacts:
+            - Name: "LAMBDA_FUNCTION_OUTPUT"
+            RunOrder: 2
+            Region: !Ref "AWS::Region"
+
+        - !Ref "AWS::NoValue" # The end of the Lambda conditional
+
+      # Enable the stage for building the content.
+      - !If
+        - EnableBuildStage
+
+        - Name: "Content_Build"
+          Actions:
+          - Name: "11ty_Build"
+            ActionTypeId:
+              Category: "Invoke"
+              Owner: "AWS"
+              Provider: "Lambda"
+              Version: "1"
+            Configuration:
+              FunctionName: !Sub "{{resolve:ssm:/lambda/${InfrastructureName}/function/jamstack-website-prod/name}}"
+              UserParameters: !Sub |
+                {
+                  "directory": "${DynamicDirectory}",
+                  "mode": "build"
+                }
+            InputArtifacts:
+            - Name: "WEBSITE_SOURCE_FILES"
+            OutputArtifacts:
+            - Name: "BUILD_OUTPUT"
+            RunOrder: 1
+            Region: !Ref "AWS::Region"
+          - Name: "Static_Build"
+            ActionTypeId:
+              Category: "Invoke"
+              Owner: "AWS"
+              Provider: "Lambda"
+              Version: "1"
+            Configuration:
+              FunctionName: !Sub "{{resolve:ssm:/lambda/${InfrastructureName}/function/jamstack-website-prod/name}}"
+              UserParameters: !Sub |
+                {
+                  "directory": "${StaticDirectory}",
+                  "mode": "copy"
+                }
+            InputArtifacts:
+            - Name: "WEBSITE_SOURCE_FILES"
+            OutputArtifacts:
+            - Name: "STATIC_OUTPUT"
+            RunOrder: 2
+            Region: !Ref "AWS::Region"
+
+        - !Ref "AWS::NoValue" # The end of the Build Stage conditional
+
+      # Enable the stage for deploying content to S3.
+      - !If
+        - EnableDeployStage
+
+        - Name: "Content_Deployment"
+          Actions:
+          - !If
+            - EnableStaticStage
+            - Name: "Large_Static_Files_to_S3"
+              ActionTypeId:
+                Category: "Deploy"
+                Owner: "AWS"
+                Provider: "S3"
+                Version: "1"
+              Configuration:
+                BucketName: !Sub "${InfrastructureName}-${ProductName}-site-${AWS::Region}"
+                CacheControl: !If [ StaticFileCacheControl, !Ref StaticFileCacheControl, !Ref "AWS::NoValue" ]
+                Extract: !If [ ExtractFiles, true, false ]
+                ObjectKey: !If [ StaticContentBasePath, !Ref StaticContentBasePath, !Ref "AWS::NoValue" ]
+              InputArtifacts:
+              - Name: "STATIC_SOURCE_FILES"
+              RunOrder: 1
+              Region: !Ref "AWS::Region"
+            - !Ref "AWS::NoValue"
+          - Name: "Static_Files_to_S3"
+            ActionTypeId:
+              Category: "Deploy"
+              Owner: "AWS"
+              Provider: "S3"
+              Version: "1"
+            Configuration:
+              BucketName: !Sub "${InfrastructureName}-${ProductName}-site-${AWS::Region}"
+              CacheControl: !If [ BuildFileCacheControl, !Ref BuildFileCacheControl, !Ref "AWS::NoValue" ]
+              Extract: !If [ ExtractFiles, true, false ]
+              ObjectKey: !If [ StaticContentBasePath, !Ref StaticContentBasePath, !Ref "AWS::NoValue" ]
+            InputArtifacts:
+            - Name: "STATIC_OUTPUT"
+            RunOrder: 1
+            Region: !Ref "AWS::Region"
+          - Name: "Dynamic_Files_to_S3"
+            ActionTypeId:
+              Category: "Deploy"
+              Owner: "AWS"
+              Provider: "S3"
+              Version: "1"
+            Configuration:
+              BucketName: !Sub "${InfrastructureName}-${ProductName}-site-${AWS::Region}"
+              CacheControl: !If [ BuildFileCacheControl, !Ref BuildFileCacheControl, !Ref "AWS::NoValue" ]
+              Extract: !If [ ExtractFiles, true, false ]
+              ObjectKey: !If [ DynamicContentBasePath, !Ref DynamicContentBasePath, !Ref "AWS::NoValue" ]
+            InputArtifacts:
+            - Name: "BUILD_OUTPUT"
+            RunOrder: 2
+            Region: !Ref "AWS::Region"
+
+        - !Ref "AWS::NoValue" # The end of the deployment stage conditional
+
+      Tags:
+      - Key: "StackName"
+        Value: !Ref "AWS::StackName"
+
+  # The following Event Role and Event Rule are needed to trigger the CodePipeline when there is a change to the "main" branch.
+  AmazonCloudWatchEventRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      Path: "/"
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+        - Effect: "Allow"
+          Principal:
+            Service:
+            - "events.amazonaws.com"
+          Action:
+          - "sts:AssumeRole"
+      Policies:
+      - PolicyName: "codepipeline-execution"
+        PolicyDocument:
+          Version: "2012-10-17"
+          Statement:
+          - Effect: "Allow"
+            Action: "codepipeline:StartPipelineExecution"
+            Resource: !Sub "arn:aws:codepipeline:${AWS::Region}:${AWS::AccountId}:${CodePipeline}"
+  AmazonCloudWatchEventRule:
+    Type: "AWS::Events::Rule"
+    Properties:
+      EventPattern:
+        source:
+        - "aws.codecommit"
+        detail-type:
+        - "CodeCommit Repository State Change"
+        resources:
+        - !Sub "arn:aws:codecommit:${AWS::Region}:${AWS::AccountId}:${BuildSourceRepository}"
+        - !Sub "arn:aws:codecommit:${AWS::Region}:${AWS::AccountId}:${WebsiteSourceRepository}"
+        detail:
+          event:
+          - "referenceCreated"
+          - "referenceUpdated"
+          referenceType:
+          - "branch"
+          referenceName:
+          - !Ref WebsiteSourceBranch
+      Targets:
+      - Arn: !Sub "arn:aws:codepipeline:${AWS::Region}:${AWS::AccountId}:${CodePipeline}"
+        RoleArn: !GetAtt AmazonCloudWatchEventRole.Arn
+        Id: "Codepipeline-Main"
+
+Outputs:
+  SuggestedStackName:
+    Description: "The suggested stack name for this template."
+    Value: !Ref SuggestedStackName
+    Export:
+      Name: !Sub "${AWS::StackName}-SuggestedStackName"
+  ParamProductName:
+    Description: "The product name SSM parameter."
+    Value: !Ref ParamProductName
+    Export:
+      Name: !Sub "${AWS::StackName}-ParamProductName"
+
+# This metadata isn't required, but makes the template parameters a bit cleaner to read in the CloudFormation console.
+Metadata:
+  AWS::CloudFormation::Interface:
+
+    ParameterGroups:
+    - Label:
+        default: "General Configuration"
+      Parameters:
+      - SuggestedStackName
+      - ProductName
+      - InfrastructureName
+      - BucketObjectExpirationInDays
+    - Label:
+        default: "CodePipeline Configuration"
+      Parameters:
+      - CloudFormationCapabilities
+      - AppBaseFolder
+      - ActionMode
+      - ProdSuffix
+      - SecondRegion
+      - SecondRegionBucket
+      - ThirdRegion
+      - ThirdRegionBucket
+    - Label:
+        default: "CodePipeline Flags"
+      Parameters:
+      - EnableCodePipelineStage
+      - EnableInfrastructureStage
+      - EnableLambdaStage
+      - EnableBuildStage
+      - EnableDeployStage
+      - EnableStaticStage
+    - Label:
+        default: "Source Configuration"
+      Parameters:
+      - WebsiteSourceRepository
+      - WebsiteSourceBranch
+      - StaticSourceRepository
+      - StaticSourceBranch
+      - BuildSourceRepository
+      - BuildSourceBranch
+      - OutputArtifactFormat
+    - Label:
+        default: "Deployment Configuration"
+      Parameters:
+      - BuildFileCacheControl
+      - StaticFileCacheControl
+      - StaticContentBasePath
+      - DynamicContentBasePath
+      - ExtractFiles
+    - Label:
+        default: "CloudFront Distribution Configuration"
+      Parameters:
+      - PrimaryDnsEntryName
+      - SecondaryDnsEntryName
+    - Label:
+        default: "Lambda Function Environment Variables"
+      Parameters:
+      - DynamicDirectory
+      - StaticDirectory
+
+    ParameterLabels:
+      # General Configuration
+      SuggestedStackName:
+        default: "Suggested Stack Name:"
+      ProductName:
+        default: "Product Name:"
+      InfrastructureName:
+        default: "Infrastructure Name:"
+      BucketObjectExpirationInDays:
+        default: "Bucket Object Expiration (In Days):"
+      # CodePipeline Configuration
+      CloudFormationCapabilities:
+        default: "CloudFormation Capabilities:"
+      AppBaseFolder:
+        default: "Application Base Folder:"
+      ActionMode:
+        default: "Action Mode:"
+      ProdSuffix:
+        default: "Prod Suffix:"
+      SecondRegion:
+        default: "Second Region:"
+      SecondRegionBucket:
+        default: "Second Region Bucket Name:"
+      ThirdRegion:
+        default: "Third Region:"
+      ThirdRegionBucket:
+        default: "Third Region Bucket Name:"
+      # CodePipeline Flags
+      EnableBuildStage:
+        default: "Enable Build Stage:"
+      EnableCodePipelineStage:
+        default: "Enable CodePipeline Stage:"
+      EnableDeployStage:
+        default: "Enable Deployment Stage:"
+      EnableLambdaStage:
+        default: "Enable Lambda Stage:"
+      EnableInfrastructureStage:
+        default: "Enable Infrastructure Stage:"
+      EnableStaticStage:
+        default: "Enable Large Static Stage:"
+      # Source Configuration
+      StaticSourceRepository:
+        default: "Website Static Source Repository:"
+      StaticSourceBranch:
+        default: "Website Static Source Branch:"
+      WebsiteSourceRepository:
+        default: "Website Source Repository:"
+      WebsiteSourceBranch:
+        default: "Website Source Branch:"
+      BuildSourceRepository:
+        default: "Build Source Repository:"
+      BuildSourceBranch:
+        default: "Build Source Branch:"
+      OutputArtifactFormat:
+        default: "Output Artifact Format:"
+      # Deployment Configuration
+      BuildFileCacheControl:
+        default: "Build/Dynamic Cache Control:"
+      StaticFileCacheControl:
+        default: "Static File Cache Control:"
+      StaticContentBasePath:
+        default: "Static Content Base Path:"
+      DynamicContentBasePath:
+        default: "Dynamic Content Base Path:"
+      ExtractFiles:
+        default: "Extract Files:"
+      # CloudFront Distribution Configuration
+      PrimaryDnsEntryName:
+        default: "Primary DNS Entry Name:"
+      SecondaryDnsEntryName:
+        default: "Secondary DNS Entry Name:"
+      # Lambda Function Environment Variables
+      DynamicDirectory:
+        default: "Dynamic Content Directory:"
+      StaticDirectory:
+        default: "Static Content Directory:"
