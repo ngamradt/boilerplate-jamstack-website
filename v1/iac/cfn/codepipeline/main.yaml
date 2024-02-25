@@ -285,6 +285,7 @@ Resources:
         Value: !Ref "AWS::StackName"
 
   # Create a role that the CodePipeline can use for deploying resources.
+  # TODO: These permissions could and probably should be scoped down to a more restrictive set when I have more time.
   CodePipelineRole:
     Type: "AWS::IAM::Role"
     Properties:
@@ -400,12 +401,12 @@ Resources:
 
       # Source Variables:
 
-      # Source.AuthorDate
-      # Source.BranchName
-      # Source.CommitId
-      # Source.CommitMessage
-      # Source.CommitterDate
-      # Source.RepositoryName
+      # JamstackWebsite.AuthorDate
+      # JamstackWebsite.BranchName
+      # JamstackWebsite.CommitId
+      # JamstackWebsite.CommitMessage
+      # JamstackWebsite.CommitterDate
+      # JamstackWebsite.RepositoryName
 
       - Name: "Source"
         Actions:
