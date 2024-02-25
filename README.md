@@ -2,7 +2,7 @@
 
 The intent of this project is to allow a web development engineer, who wants to use Markdown for their blog posts, to set up a small and affordable personal blog.  It could also be used for a small business informational website, but this is not intended for any large-scale sites.  Though the foundations for a large-scale informational website are here, you would want to add some additional features for a larger site (which is outside the scope of this documentation).
 
-Based on some rough calculations, I suspect this solution should have no problem supporting hudreds of medium-sized blog posts.  Given I cannot ever see writing more than one a week, this should all work for years before running close to any limits.
+Based on some rough calculations, I suspect this solution should have no problem supporting hundreds of medium-sized blog posts.  Given I cannot ever see writing more than one a week, this should all work for years before running close to any limits.
 
 This repository contains the main [11ty](https://www.11ty.dev) implementation and needed [Infrastructure as Code (IaC)](https://en.wikipedia.org/wiki/Infrastructure_as_code) to get this project deployed to [Amazon Web Services (AWS)](https://aws.amazon.com/).
 
@@ -10,7 +10,7 @@ This repository contains the main [11ty](https://www.11ty.dev) implementation an
 > Do not use this repository directly, the "Use this template" button should be utilized to create your own copy of this repository.  This will allow you to make modifications to everything in this repository to suit your needs.  When there are enhancements to the source repository, you can always pull them in as needed.
 
 > [!TIP]
-> This project was designed to run from [AWS CodeCommit](https://aws.amazon.com/codecommit/).  Once you have a copy of this repository, you can upload it to CodeCommit in your persoanl AWS account.  You can read my ["Blog on a Budget" series](https://nealgamradt.com/posts/2023/06/blog-on-a-budget-overview/index.html#series-posts) to get details on how to set up your account.  It would be possible for the [CodePipeline template](v1/iac/cfn/codepipeline/main.yaml) to be modified to pull from GitHub, but that is outside the scope of this documentation.  I chose to use CodeCommit because I really had not worked with it in a long time, so I wanted to see how much it had improved.
+> This project was designed to run from [AWS CodeCommit](https://aws.amazon.com/codecommit/).  Once you have a copy of this repository, you can upload it to CodeCommit in your personal AWS account.  You can read my ["Blog on a Budget" series](https://nealgamradt.com/posts/2023/06/blog-on-a-budget-overview/index.html#series-posts) to get details on how to set up your account.  It would be possible for the [CodePipeline template](v1/iac/cfn/codepipeline/main.yaml) to be modified to pull from GitHub, but that is outside the scope of this documentation.  I chose to use CodeCommit because I really had not worked with it in a long time, so I wanted to see how much it had improved.
 
 ---
 
@@ -44,7 +44,7 @@ These repositories are part of my ["Blog on a Budget" series](https://nealgamrad
 
 ## Prerequisites
 
-1. You will need to have already set up a [free AWS account](aws.amazon.com/free/).  This is covered in [this blog post](https://nealgamradt.com/posts/2023/06/aws-account-billing-budgets/index.html). 
+1. You will need to have already set up a [free AWS account](https://aws.amazon.com/free/).  This is covered in [this blog post](https://nealgamradt.com/posts/2023/06/aws-account-billing-budgets/index.html). 
 2. You will need to have already purchased your own [domain name](https://en.wikipedia.org/wiki/Domain_name).
 3. Copies of the [files](https://docs.aws.amazon.com/codecommit/latest/userguide/how-to-create-file.html#how-to-create-file-console) from the [Jamstack Website Core](https://github.com/ngamradt/boilerplate-jamstack-website), [Jamstack Website Build](https://github.com/ngamradt/boilerplate-jamstack-website-build), and [Jamstack Website Static Resources](https://github.com/ngamradt/boilerplate-jamstack-website-static) repositories will have to be put into [AWS CodeCommit repositories](https://docs.aws.amazon.com/codecommit/latest/userguide/how-to-create-repository.html#how-to-create-repository-console) in your AWS account.
 
@@ -78,7 +78,7 @@ To kick off everything, you will need to do the following:
 8. If all the repositories were set up correctly, you should see the CodePipeline trigger and start setting up infrastructure.
 
 > [!CAUTION]
-> If your domain name is not hosted with AWS and the CodePipeline creates your Route53 Zone, you will need to get the NS records added to your DNS provider before the ACM certifiates will be able to complete.  You cannot point your DNS to the proper NS records until they are created by the template.
+> If your domain name is not hosted with AWS and the CodePipeline creates your Route53 Zone, you will need to get the NS records added to your DNS provider before the ACM certificates will be able to complete.  You cannot point your DNS to the proper NS records until they are created by the template.
 
 Once the initial setup is complete, you will need to then deploy the Lambda:
 
@@ -105,10 +105,10 @@ Now that the Lambda is deployed, we will want to set it to start building and de
 10. If everything is set up correctly, the CodePipeline should now be set up to build and deploy your 11ty files to the S3 origin of your website.
 11. Once the files are deployed to S3, you should be able to reach your site homepage.
 
-For ongiong use of the CodePipeline, you would enable and disable different stages of the CodePipleine (using parameters) as needed.  For instance, if you needed to redeploy the Lambda with updates, you would switch the value of `EnableLambdaStage` to `Yes`.  This would then enable that stage and the updates would get deployed.  You can then disable this stage again once you are done.
+For ongoing use of the CodePipeline, you would enable and disable different stages of the CodePipeline (using parameters) as needed.  For instance, if you needed to redeploy the Lambda with updates, you would switch the value of `EnableLambdaStage` to `Yes`.  This would then enable that stage and the updates would get deployed.  You can then disable this stage again once you are done.
 
 > [!NOTE]
-> This solution is **not** using [S3 web hosting](https://docs.aws.amazon.com/AmazonS3/latest/userguide/EnableWebsiteHosting.html), just direct acces to S3 objects.  Due to this fact, the only `index.html` page that automatically resolves is the root one for your homepage.  If you a linking directly to any posts, you need to link to the full URL which includes the `index.html`.  This is a consequence of cost (and to an extent, speed) being my main driver for this project.  I personally don't care that this works this way, because I suspect people will never be typing in the full path to my individual blog posts; a vast majority of the time it will be a link that they click on.  If this is importat to you, there are a number of ways to get the directory index to work with this solution, and I may add that as an enhancement to this project in the future.  However, for now, if you use this solution, always link to the `index.html` page.  This doesn't seem hurt SEO because this solution does create a `sitemap.xml` file to help search engines crawl the site.
+> This solution is **not** using [S3 web hosting](https://docs.aws.amazon.com/AmazonS3/latest/userguide/EnableWebsiteHosting.html), just direct access to S3 objects.  Due to this fact, the only `index.html` page that automatically resolves is the root one for your homepage.  If you a linking directly to any posts, you need to link to the full URL which includes the `index.html`.  This is a consequence of cost (and to an extent, speed) being my main driver for this project.  I personally don't care that this works this way, because I suspect people will never be typing in the full path to my individual blog posts; a vast majority of the time it will be a link that they click on.  If this is important to you, there are a number of ways to get the directory index to work with this solution, and I may add that as an enhancement to this project in the future.  However, for now, if you use this solution, always link to the `index.html` page.  This doesn't seem to hurt SEO because this solution does create a `sitemap.xml` file to help search engines crawl the site.
 
 # License
 
