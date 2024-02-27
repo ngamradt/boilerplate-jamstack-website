@@ -32,14 +32,14 @@ Parameters:
     Default: "Yes"
   EnableCertificateStage:
     Type: "String"
-    Description: "Enabled the secure certificate action?"
+    Description: "Enabled the secure certificate stage?"
     AllowedValues:
     - "Yes"
     - "No"
     Default: "No"
   EnableCloudFrontStage:
     Type: "String"
-    Description: "Enabled the CloudFront Distribution action?"
+    Description: "Enabled the CloudFront Distribution stage?"
     AllowedValues:
     - "Yes"
     - "No"
@@ -1047,6 +1047,10 @@ Metadata:
       # CodePipeline Flags
       EnableBuildStage:
         default: "Enable Build Stage:"
+      EnableCertificateStage:
+        default: "Enable Certificate Stage:"
+      EnableCloudFrontStage:
+        default: "Enable CloudFront Stage:"
       EnableCodePipelineStage:
         default: "Enable CodePipeline Stage:"
       EnableDeployStage:
