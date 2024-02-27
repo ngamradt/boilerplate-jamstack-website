@@ -74,17 +74,28 @@ To kick off everything, you will need to do the following:
     - For all of the `Yes/No` parameters, the correct value should have already been selected.
     - The General Configuration and CloudFront Configuration values are most-likely the main values you will want to update.
 7. Once the stack completes successfully, it should have created a new [CodePipeline](https://us-east-2.console.aws.amazon.com/codesuite/codepipeline/pipelines) (in your selected region).
-    - If you don't see your CodePipeline, mkae sure to double-check your region.
+    - If you don't see your CodePipeline, make sure to double-check your region.
 8. If all the repositories were set up correctly, you should see the CodePipeline trigger and start setting up infrastructure.
 
 > [!CAUTION]
 > If your domain name is not hosted with AWS and the CodePipeline creates your Route53 Zone, you will need to get the NS records added to your DNS provider before the ACM certificates will be able to complete.  You cannot point your DNS to the proper NS records until they are created by the template.
 
-Once the initial setup is complete, you will need to then deploy the Lambda:
+Once the initial setup is complete, you will then want to deploy the ACM Secure Certificate and the CloudFront Distribution:
 
 1. Go back to the [CloudFormation console](https://us-east-1.console.aws.amazon.com/cloudformation/home).
 2. Ensure you are in the correct region.
-3. Select the stack that you previously created through the console in the previous series of steps.
+3. Select the stack that you previously created through the console in the first series of steps.
+4. Select the option to update the stack.
+5. Switch the value of the `EnableCertificateStage` parameter to `Yes`.
+6. Switch the value of the `EnableCloudFrontStage` parameter to `Yes`.
+7. Run the stack updates.
+8. If everything is set up correctly, then the ACM Secure Certificate and CloudFront Distribution should be ready.
+
+Now that all the base infrastructure has been set up, you will need to then deploy the Lambda:
+
+1. Go back to the [CloudFormation console](https://us-east-1.console.aws.amazon.com/cloudformation/home).
+2. Ensure you are in the correct region.
+3. Select the stack that you previously created through the console in the first series of steps.
 4. Select the option to update the stack.
 5. Switch the value of the `EnableInfrastructureStage` parameter to `No`.
 6. Switch the value of the `EnableLambdaStage` parameter to `Yes`.
